@@ -42,8 +42,7 @@ const questionsSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const quizSchema = new mongoose.Schema(
-  {
+const quizSchema = new mongoose.Schema({
     title: {
       type: String,
       required: [true, "Title is required"],

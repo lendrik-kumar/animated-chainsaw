@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { Quiz } from "./quiz.model";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[0-9]{10}$/;
@@ -53,6 +54,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    quiz: {
+      type: Quiz.schema,
+      default: null
+    },
+    timeUsed: {
+        type: Number,
+        default: 0,
+        min: [0, "Time used cannot be negative"]
+    }
   },
   {
     timestamps: true,
