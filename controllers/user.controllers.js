@@ -1,13 +1,30 @@
-import { User } from "../models/User.js"
-import { Quiz } from "../models/Quiz.js"
+import { User } from "../models/user.model.js"
+import { Quiz } from "../models/quiz.model.js"
 
 export const googleAuth = (req, res, next) => {
     try {
-        //google login 
-        //email verify
-        //?issue cookie
-        //generate and set unique quiz for user
-        //:return invalid email
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        // Simulate user lookup
+        const user = {
+            name: "sanket",
+            email: "sanket@mail.com",
+            isResuming: false
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Authentication successful",
+            user,
+            token: "sankettoken"
+        });
     } catch (error) {
         console.error("Google Auth Error:", error)
         res.status(500).json({

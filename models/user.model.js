@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Quiz } from "./quiz.model";
+import { Quiz } from "./quiz.model.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[0-9]{10}$/;
