@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [EMAIL_REGEX, "Please enter a valid email address"],
     },
-    phNo: {
+    phone: {
       type: String,
       trim: true,
       match: [PHONE_REGEX, "Phone number must be a valid 10-digit number"],

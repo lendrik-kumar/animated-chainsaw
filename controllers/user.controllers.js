@@ -1,7 +1,9 @@
 import { User } from "../models/user.model.js"
 import { Quiz } from "../models/quiz.model.js"
+import { Allowed } from "../models/allowed.model.js";
+import { generateToken } from "../middlewares/auth.middleware.js";
 
-export const googleAuth = (req, res, next) => {
+export const googleAuth = async(req, res, next) => {
     try {
         const { email } = req.body;
 
@@ -12,18 +14,73 @@ export const googleAuth = (req, res, next) => {
             });
         }
 
-        // Simulate user lookup
-        const user = {
-            name: "sanket",
-            email: "sanket@mail.com",
-            isResuming: false
+        const normalizedEmail = email.toLowerCase().trim();
+
+        const find = await Allowed.findOne({ email: normalizedEmail });
+
+        if (!find) {
+            return res.status(403).json({
+                success: false,
+                message: "Email is not allowed"
+            });
         }
+
+        const existingUser = await User.findOne({ email: normalizedEmail })
+
+        if (existingUser) {
+            const hasStarted = existingUser.hasStarted && !existingUser.hasSubmitted;
+            const token = generateToken(existingUser);
+            
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000 
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: "User exists",
+                user: {
+                    email: existingUser.email,
+                    name: existingUser.name,
+                    isResuming: hasStarted
+                }
+            });
+        }
+
+        const newUser = new User({
+            name: find.name || normalizedEmail.split("@")[0],
+            email: normalizedEmail,
+            hasStarted: false,
+            hasSubmitted: false,
+            phone: find.phone || null,
+            score: 0,
+            timeUsed: 0,
+            quiz: null,
+            responses: [],
+            qualifiedForInterview: false
+        })
+
+        await newUser.save()
+
+        const token = generateToken(newUser);
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 
+        });
 
         return res.status(200).json({
             success: true,
             message: "Authentication successful",
-            user,
-            token: "sankettoken"
+            user: {
+                name: newUser.name,
+                email: newUser.email,
+                isResuming: false
+            }
         });
     } catch (error) {
         console.error("Google Auth Error:", error)
@@ -118,18 +175,18 @@ export const startQuiz = async (req, res) => {
         }
         
         const user = await User.findOne({ _id: id, email })
-
-        if (user.hasSubmitted) {
-            return res.status(400).json({
-                success: false,
-                message: "Quiz already submitted"
-            })
-        }
         
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "User not found"
+            })
+        }
+
+        if (user.hasSubmitted) {
+            return res.status(400).json({
+                success: false,
+                message: "Quiz already submitted"
             })
         }
         
@@ -281,3 +338,53 @@ export const submitQuiz = async (req, res) => {
     }
 }
 
+export const logout = async (req, res) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production"
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        })
+    } catch (error) {
+        console.error("Logout Error:", error)
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        })
+    }
+}
+
+export const verifyAuth = async (req, res) => {
+  try {
+    const user = await User.findOne({ 
+      _id: req.user.id, 
+      email: req.user.email 
+    }).select('name email hasStarted hasSubmitted');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        isResuming: user.hasStarted && !user.hasSubmitted
+      }
+    });
+  } catch (error) {
+    console.error('Verify Auth Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
