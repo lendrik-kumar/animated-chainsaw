@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const questionsSchema = new mongoose.Schema(
   {
     question: {
