@@ -4,6 +4,7 @@ import { connectDataBase } from './config/db.js'
 import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import userRoutes from './routes/user.routes.js'
+import adminRoutes from './routes/admin.routes.js'
 
 dotenv.config()
 
@@ -26,6 +27,7 @@ app.get('/api', (req, res) => {
 })
 
 app.use('/api/user', userRoutes)
+app.use('/api/admin', adminRoutes)
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
