@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set")
+}
 const JWT_EXPIRES = "7d";
 const ADMIN_JWT_EXPIRES = "24h";
 
@@ -65,7 +68,6 @@ export const authMiddleware = (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Auth Middleware Error:", error.message);
     res.status(500).json({
       success: false,
       message: "Internal server error during authentication",

@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
 const questionsSchema = new mongoose.Schema(
-  {
+  { 
+    id: mongoose.Schema.Types.ObjectId,
     question: {
       type: String,
       required: [true, "Question is required"],
@@ -37,7 +38,7 @@ const questionsSchema = new mongoose.Schema(
       min: [-1, "Invalid correct answer index"],
     },
   },
-  { _id: false }
+  { _id: true }
 );
 
 const quizSchema = new mongoose.Schema({

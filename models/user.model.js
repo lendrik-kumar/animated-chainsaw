@@ -8,7 +8,9 @@ const questionSnapshotSchema = new mongoose.Schema(
     id: mongoose.Schema.Types.ObjectId,
     question: String,
     options: [String],
-    image: String
+    image: String,
+    correctAnswers: Number, // ✅ needed for scoring
+    answer: String          // ✅ fallback text check
   },
   { _id: false }
 )
@@ -26,7 +28,7 @@ const quizSnapshotSchema = new mongoose.Schema(
 const responseSchema = new mongoose.Schema(
   {
     questionId: mongoose.Schema.Types.ObjectId,
-    selectedOption: String
+    selectedOption: Number
   },
   { _id: false }
 )
