@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { verifyFirebaseToken } from "../config/firebase.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -16,6 +17,7 @@ export const generateToken = (user) => {
     {
       id: user._id.toString(),
       email: user.email,
+      uid: user.firebaseUid, // Include Firebase UID
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
@@ -33,9 +35,47 @@ export const generateAdminToken = () => {
   );
 };
 
+// New Firebase ID token verification middleware
+export const firebaseAuthMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: "Authorization header missing or invalid",
+      });
+    }
+
+    const idToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    if (!idToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Firebase ID token missing",
+      });
+    }
+
+    // Verify Firebase ID token
+    const firebaseUser = await verifyFirebaseToken(idToken);
+    
+    // Store Firebase user info in request
+    req.firebaseUser = firebaseUser;
+    
+    next();
+  } catch (error) {
+    console.error("Firebase Auth Middleware Error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid Firebase token",
+    });
+  }
+};
+
+// Session-based auth middleware (for cookie-based sessions)
 export const authMiddleware = (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    const token = req.cookies?.session;
 
     if (!token) {
       return res.status(401).json({
@@ -64,6 +104,7 @@ export const authMiddleware = (req, res, next) => {
     req.user = {
       id: decoded.id,
       email: decoded.email,
+      uid: decoded.uid, // Firebase UID
     };
 
     next();

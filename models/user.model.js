@@ -35,6 +35,12 @@ const responseSchema = new mongoose.Schema(
 
 const userSchema = new mongoose.Schema(
   {
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows multiple null values
+      trim: true
+    },
     name: {
       type: String,
       required: [true, "Name is required"],

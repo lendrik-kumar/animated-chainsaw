@@ -8,6 +8,114 @@ const googleAuthSchema = z.object({
   email: z.string().email().max(254)
 })
 
+// New Firebase authentication endpoint
+export const firebaseAuth = async (req, res, next) => {
+  try {
+    // Firebase user info is already verified by middleware
+    const { uid, email, name, emailVerified } = req.firebaseUser;
+
+    if (!email || !uid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Firebase user data"
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if email is allowed
+    const find = await Allowed.findOne({ email: normalizedEmail });
+
+    if (!find) {
+      return res.status(403).json({
+        success: false,
+        message: "Email is not allowed"
+      });
+    }
+
+    // Check if user exists by Firebase UID or email
+    let existingUser = await User.findOne({ 
+      $or: [
+        { firebaseUid: uid },
+        { email: normalizedEmail }
+      ]
+    });
+
+    if (existingUser) {
+      // Update Firebase UID if missing
+      if (!existingUser.firebaseUid) {
+        existingUser.firebaseUid = uid;
+        await existingUser.save();
+      }
+
+      const hasStarted = existingUser.hasStarted && !existingUser.hasSubmitted;
+      const token = generateToken(existingUser);
+
+      res.cookie("session", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "User authenticated successfully",
+        user: {
+          uid: existingUser.firebaseUid,
+          email: existingUser.email,
+          name: existingUser.name,
+          isResuming: hasStarted
+        }
+      });
+    }
+
+    // Create new user
+    const newUser = new User({
+      firebaseUid: uid,
+      name: name || find.name || normalizedEmail.split("@")[0],
+      email: normalizedEmail,
+      hasStarted: false,
+      hasSubmitted: false,
+      phone: find.phone || null,
+      score: 0,
+      timeUsed: 0,
+      quiz: null,
+      responses: [],
+      qualifiedForInterview: false
+    });
+
+    await newUser.save();
+
+    const token = generateToken(newUser);
+
+    res.cookie("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User created and authenticated successfully",
+      user: {
+        uid: newUser.firebaseUid,
+        email: newUser.email,
+        name: newUser.name,
+        isResuming: false
+      }
+    });
+  } catch (error) {
+    console.error("Firebase Auth Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during authentication"
+    });
+  }
+};
+
+// Legacy Google auth endpoint (deprecated - use firebaseAuth instead)
 export const googleAuth = async (req, res, next) => {
   try {
     const parsed = googleAuthSchema.safeParse(req.body)
@@ -140,9 +248,17 @@ export const getUserInfo = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    res.clearCookie("session", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
+    });
+
+    // Also clear legacy token cookie for backward compatibility
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
     });
 
     return res.status(200).json({
@@ -448,7 +564,6 @@ export const submitQuiz = async (req, res) => {
       data: {
         totalQuestions: user.quiz.questions.length,
         attempted: evaluated.filter(r => Number(r.selectedOption) !== -1).length,
-        score,
         timeUsed
       }
     })

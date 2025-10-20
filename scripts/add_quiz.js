@@ -14,12 +14,14 @@ const sampleQuestions = [
         question: "What is the time complexity of binary search?",
         options: ["O(n)", "O(log n)", "O(n log n)", "O(n²)"],
         answer: "O(log n)",
+        image:"https://zvsbe.com",
         correctAnswers: 1
     },
     {
         question: "Which sorting algorithm has the worst time complexity?",
         options: ["Quick Sort", "Merge Sort", "Bubble Sort", "Heap Sort"],
         answer: "Bubble Sort",
+        image:"https://zvsbe.com",
         correctAnswers: 2
     },
     {

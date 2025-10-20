@@ -18,8 +18,9 @@ const PORT = process.env.PORT || 8000
 
 const DEV_ORIGIN ='http://localhost:5173'
 const PROD_ORIGIN = 'https://gdg-recruitment-portal-front.vercel.app/'
+const PROD_ORIGIN_2 = 'https://www.recruitment.devwithyash.dev/'
 const ADMIN_ORIGIN = 'https://gdg-recruitment-portal-admin.vercel.app/'
-const ORIGINS = [DEV_ORIGIN, PROD_ORIGIN, ADMIN_ORIGIN]
+const ORIGINS = [DEV_ORIGIN, PROD_ORIGIN, PROD_ORIGIN_2, ADMIN_ORIGIN]
 
 app.set('trust proxy', 1)
 app.use(helmet({
@@ -29,7 +30,7 @@ app.use(helmet({
 }))
 
 app.use(cors({
-  origin: [...ORIGINS],
+  origin: ORIGINS,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true
@@ -51,7 +52,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     const origin = req.headers.origin
-    if (origin && origin !== DEV_ORIGIN) {
+    if (origin && !ORIGINS.includes(origin)) {
       return res.status(403).json({ success: false, message: 'Forbidden origin' })
     }
   }
