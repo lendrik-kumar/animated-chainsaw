@@ -4,7 +4,7 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-const MONGO_URI = "mongodb+srv://sanketkamboj2006_db_user:<password>@gdg-recruitment.5zzaawz.mongodb.net/?retryWrites=true&w=majority&appName=gdg-recruitment"
+const MONGO_URI = "mongodb+srv://sanketkamboj2006_db_user:sanket2006@gdg-recruitment.5zzaawz.mongodb.net/?retryWrites=true&w=majority&appName=gdg-recruitment"
 
 console.log(MONGO_URI);
 
