@@ -16,7 +16,11 @@ app.disable('x-powered-by')
 
 const PORT = process.env.PORT || 8000
 
-const DEV_ORIGIN ='https://gdg-recruitment-portal-front.vercel.app/'
+const DEV_ORIGIN ='http://localhost:5173'
+const PROD_ORIGIN = 'https://gdg-recruitment-portal-front.vercel.app/'
+const ADMIN_ORIGIN = 'https://gdg-recruitment-portal-admin.vercel.app/'
+const ORIGINS = [DEV_ORIGIN, PROD_ORIGIN, ADMIN_ORIGIN]
+
 app.set('trust proxy', 1)
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -25,7 +29,7 @@ app.use(helmet({
 }))
 
 app.use(cors({
-  origin: [DEV_ORIGIN, "https://marc-unthankful-likely.ngrok-free.dev"],
+  origin: [...ORIGINS],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true
